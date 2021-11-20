@@ -17,22 +17,24 @@ Library Manager: ArmAr.exe V6.16
 Hex Converter:   FromElf.exe V6.16
 CPU DLL:         SARMCM3.DLL V5.36.0.0
 Dialog DLL:      DARMCM1.DLL V1.19.4.0
-Target DLL:      UL2CM3.DLL V1.164.0.0
+Target DLL:      CMSIS_AGDI.dll V1.33.0.0
 Dialog DLL:      TARMCM1.DLL V1.14.4.0
  
 <h2>Project:</h2>
-C:\00MDK\Boards\NXP\FRDM-KL25Z\ece_5721_fp_KL25Z\ece_5721_fp_KL25Z.uvprojx
-Project File Date:  11/09/2021
+C:\00MDK\Boards\NXP\FRDM-KL25Z\final_project\final_projct.uvprojx
+Project File Date:  11/20/2021
 
 <h2>Output:</h2>
 *** Using Compiler 'V6.16', folder: 'C:\Keil_v5\ARM\ARMCLANG\Bin'
-Rebuild target 'CMSIS-DAP'
-assembling startup_MKL25Z4.s...
+Build target 'CMSIS-DAP'
+main.c(149): warning: unused variable 'u32SBR' [-Wunused-variable]
+        uint32_t u32SBR = 0;
+                 ^
+1 warning generated.
 compiling main.c...
-compiling system_MKL25Z4.c...
 linking...
-Program Size: Code=408 RO-data=632 RW-data=0 ZI-data=352  
-".\Objects\ece_5721_fp_KL25Z.axf" - 0 Error(s), 0 Warning(s).
+Program Size: Code=1140 RO-data=216 RW-data=0 ZI-data=352  
+".\Objects\final_projct.axf" - 0 Error(s), 1 Warning(s).
 
 <h2>Software Packages used:</h2>
 
@@ -60,8 +62,8 @@ Package Vendor: Keil
 
    * Component: Keil::Device:Startup:2.5.0
       Include file:  Device\Source\system_MKL25Z4.h
-      Source file:   Device\Source\system_MKL25Z4.c
       Source file:   Device\Source\ARM\startup_MKL25Z4.s
+      Source file:   Device\Source\system_MKL25Z4.c
 Build Time Elapsed:  00:00:00
 </pre>
 </body>
