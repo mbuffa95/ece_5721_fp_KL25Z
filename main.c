@@ -11,17 +11,28 @@
 #define SENSOR_1_YELLOW_PIN ( 12 )
 #define SENSOR_1_RED_PIN ( 5 )
 
+#define SENSOR_COUNT ( 1 )
+
 #define MASK(x) (1UL << (x))
 
-void vInitializeUART2(uint32_t baud_rate) ;
-void vInitializeLEDs( void );
-uint8_t UART2_Receive_Poll( void );
-void UART2_Transmit_Poll(uint8_t data);
+static void vInitializeUART2(uint32_t baud_rate) ;
+static void vInitializeLEDs( void );
+static uint8_t UART2_Receive_Poll( void );
+static void UART2_Transmit_Poll(uint8_t data);
+static void vUpdateDisplay( void );
+
+typedef struct xSensorStatusType
+{
+	uint16_t u16Cap;
+	int8_t s8Temp;
+} xSENSOR_STATUS_TYPE;
+
+static xSENSOR_STATUS_TYPE xSensorStatus[SENSOR_COUNT];
 	
 int main( void )
 {
-	char charBuf[3];
-	uint8_t u8CharsRxd = 0;
+	uint8_t u8Buf[8];
+	uint8_t u8BytesRxd = 0;
 	//uint8_t u8Data[9] = {0x68, 0x65, 0x79, 0x20, 0x74, 0x68, 0x65, 0x72, 0x65};
 	vInitializeLEDs();
 	vInitializeUART2( 4800 );
@@ -32,78 +43,44 @@ int main( void )
 //		UART2_Transmit_Poll('H');
 //		UART2_Transmit_Poll('I');
 //		UART2_Transmit_Poll(0x00);
-		charBuf[ u8CharsRxd ] = UART2_Receive_Poll();
+		u8Buf[ u8BytesRxd ] = UART2_Receive_Poll();
 		
-		u8CharsRxd++;
+		u8BytesRxd++;
 		
-		if( u8CharsRxd == 3 )
+		if( u8BytesRxd >= 8 )
 		{
-			if( charBuf[0] == 'H' )
+			// received the entire payload, now parse to figure out what kind of reading it is
+			
+			if( u8Buf[0] < SENSOR_COUNT )
 			{
-				PTA->PCOR = ( MASK( SENSOR_0_YELLOW_PIN ) | MASK( SENSOR_1_GREEN_PIN ) | MASK( SENSOR_1_RED_PIN ) );
+				switch( u8Buf[1] )
+				{
+					case ( 0x00 ):
+						// capacitance reading
+						xSensorStatus[u8Buf[0]].u16Cap = ( ( ( (uint16_t)u8Buf[2] ) << 8U ) | (uint16_t)u8Buf[3] );
+					
+						PTA->PCOR = ( MASK( SENSOR_0_YELLOW_PIN ) | MASK( SENSOR_1_GREEN_PIN ) | MASK( SENSOR_1_RED_PIN ) );
+					break;
+					
+					case ( 0x01 ):
+						// temperature reading
+						xSensorStatus[u8Buf[0]].s8Temp = (int8_t)u8Buf[2];
+						PTA->PCOR = ( MASK( SENSOR_0_YELLOW_PIN ) | MASK( SENSOR_1_GREEN_PIN ) | MASK( SENSOR_1_RED_PIN ) );
+					break;
+				}
+				
+				vUpdateDisplay();
 			}
-			u8CharsRxd = 0;
+			
+			u8BytesRxd = 0;
+			
 		}
-		
-		
-		
-		
-		
-//		PTA->PCOR = ( MASK( SENSOR_0_GREEN_PIN ) | MASK( SENSOR_0_RED_PIN ) | MASK( SENSOR_1_YELLOW_PIN ) );
-//		PTA->PSOR = ( MASK( SENSOR_0_YELLOW_PIN ) | MASK( SENSOR_1_GREEN_PIN ) | MASK( SENSOR_1_RED_PIN ) );
-//	
-//		for( int j = 0; j < 65535; j++ )
-//		{
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//		}
-//		
-//		PTA->PCOR = ( MASK( SENSOR_0_YELLOW_PIN ) | MASK( SENSOR_1_GREEN_PIN ) | MASK( SENSOR_1_RED_PIN ) );
-//		PTA->PSOR = ( MASK( SENSOR_0_GREEN_PIN ) | MASK( SENSOR_0_RED_PIN ) | MASK( SENSOR_1_YELLOW_PIN ) );
-//		
-//		for( int j = 0; j < 65535; j++ )
-//		{
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//			__NOP();
-//		}
-	
 	}
+}
+
+static void vUpdateDisplay( void )
+{
+
 }
 
 //void vInitializeUART1( uint32_t baud_rate )
@@ -128,27 +105,23 @@ int main( void )
 //	UART2->C2 = UART_C2_TE_MASK | UART_C2_RE_MASK;
 //}
 
-uint8_t UART2_Receive_Poll( void ) 
+static uint8_t UART2_Receive_Poll( void ) 
 {
 		// wait until receive data register is full
 		while( !( UART2->S1 & UART_S1_RDRF_MASK ) );
 		return UART2->D;
 }
 
-void UART2_Transmit_Poll(uint8_t data) 
+static void UART2_Transmit_Poll(uint8_t data) 
 {
 	// wait until transmit data register is empty
 	while ( !( UART2->S1 & UART_S1_TDRE_MASK ) );
 	UART2->D = data;
 }
 
-void vInitializeUART2(uint32_t baud_rate) 
+static  void vInitializeUART2(uint32_t baud_rate) 
 {
 	uint32_t divisor;
-	uint32_t u32CLKDIV1 = 0;
-	uint32_t u32SBR = 0;
-	
-	u32CLKDIV1 = SIM_CLKDIV1;
 	
 	// enable clock to UART and Port E
 	SIM->SCGC4 |= SIM_SCGC4_UART2_MASK;
@@ -177,7 +150,7 @@ void vInitializeUART2(uint32_t baud_rate)
 }
 
 
-void vInitializeLEDs( void )
+static void vInitializeLEDs( void )
 {
 	// enable the clock to port A
 	SIM->SCGC5 |= SIM_SCGC5_PORTA_MASK;
