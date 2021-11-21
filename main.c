@@ -13,6 +13,12 @@
 
 #define SENSOR_COUNT ( 1 )
 
+#define LOWEST_VALID_CAPACITANCE ( 150 )
+#define HIGHEST_VALID_CAPACITANCE ( 2050 )
+
+#define LOWEST_VALID_TEMPERATURE ( -30 )
+#define HIGHEST_VALID_TEMPERATURE ( 130 )
+
 #define MASK(x) (1UL << (x))
 
 static void vInitializeUART2(uint32_t baud_rate) ;
@@ -36,6 +42,8 @@ int main( void )
 	//uint8_t u8Data[9] = {0x68, 0x65, 0x79, 0x20, 0x74, 0x68, 0x65, 0x72, 0x65};
 	vInitializeLEDs();
 	vInitializeUART2( 4800 );
+	uint16_t u16Cap;
+	int8_t s8Temp;
 	
 	while( 1 )
 	{
@@ -56,16 +64,28 @@ int main( void )
 				switch( u8Buf[1] )
 				{
 					case ( 0x00 ):
-						// capacitance reading
-						xSensorStatus[u8Buf[0]].u16Cap = ( ( ( (uint16_t)u8Buf[2] ) << 8U ) | (uint16_t)u8Buf[3] );
+						// received capacitance reading
+						u16Cap = ( ( ( (uint16_t)u8Buf[2] ) << 8U ) | (uint16_t)u8Buf[3] );
 					
-						PTA->PCOR = ( MASK( SENSOR_0_YELLOW_PIN ) | MASK( SENSOR_1_GREEN_PIN ) | MASK( SENSOR_1_RED_PIN ) );
+						if( u16Cap >= LOWEST_VALID_CAPACITANCE && u16Cap <= HIGHEST_VALID_CAPACITANCE )
+						{
+							xSensorStatus[u8Buf[0]].u16Cap = u16Cap;
+							vUpdateDisplay();
+						}
+						
 					break;
 					
 					case ( 0x01 ):
-						// temperature reading
-						xSensorStatus[u8Buf[0]].s8Temp = (int8_t)u8Buf[2];
-						PTA->PCOR = ( MASK( SENSOR_0_YELLOW_PIN ) | MASK( SENSOR_1_GREEN_PIN ) | MASK( SENSOR_1_RED_PIN ) );
+					// received temperature reading
+					s8Temp = (int8_t)u8Buf[2];
+					
+					if( s8Temp >= LOWEST_VALID_TEMPERATURE && s8Temp <= HIGHEST_VALID_TEMPERATURE )
+					{
+						// valid temperature
+						xSensorStatus[u8Buf[0]].s8Temp = s8Temp;
+						vUpdateDisplay();
+					}
+						
 					break;
 				}
 				
