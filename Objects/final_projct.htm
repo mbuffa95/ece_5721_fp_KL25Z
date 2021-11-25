@@ -3,11 +3,11 @@
 <title>Static Call Graph - [.\Objects\final_projct.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image .\Objects\final_projct.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6160001: Last Updated: Tue Nov 23 19:55:29 2021
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6160001: Last Updated: Wed Nov 24 21:31:15 2021
 <BR><P>
-<H3>Maximum Stack Usage =         64 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
+<H3>Maximum Stack Usage =         72 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
-__rt_entry_main &rArr; main &rArr; vInitializeUART2
+__rt_entry_main &rArr; main &rArr; vInitializeLEDs
 <P>
 <H3>
 Functions with no stack information
@@ -179,8 +179,8 @@ Global Symbols
 <P><STRONG><a name="[60]"></a>__rt_entry_postsh_1</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, __rtentry2.o(.ARM.Collect$$rtentry$$00000009))
 
 <P><STRONG><a name="[31]"></a>__rt_entry_main</STRONG> (Thumb, 0 bytes, Stack size unknown bytes, __rtentry2.o(.ARM.Collect$$rtentry$$0000000D))
-<BR><BR>[Stack]<UL><LI>Max Depth = 64 + Unknown Stack Size
-<LI>Call Chain = __rt_entry_main &rArr; main &rArr; vInitializeUART2
+<BR><BR>[Stack]<UL><LI>Max Depth = 72 + Unknown Stack Size
+<LI>Call Chain = __rt_entry_main &rArr; main &rArr; vInitializeLEDs
 </UL>
 <BR>[Calls]<UL><LI><a href="#[33]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;exit
 <LI><a href="#[32]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
@@ -400,8 +400,8 @@ Global Symbols
 <P><STRONG><a name="[26]"></a>SystemInit</STRONG> (Thumb, 8 bytes, Stack size 0 bytes, system_mkl25z4.o(.text.SystemInit))
 <BR>[Address Reference Count : 1]<UL><LI> startup_mkl25z4.o(.text)
 </UL>
-<P><STRONG><a name="[32]"></a>main</STRONG> (Thumb, 212 bytes, Stack size 40 bytes, main.o(.text.main))
-<BR><BR>[Stack]<UL><LI>Max Depth = 64<LI>Call Chain = main &rArr; vInitializeUART2
+<P><STRONG><a name="[32]"></a>main</STRONG> (Thumb, 184 bytes, Stack size 40 bytes, main.o(.text.main))
+<BR><BR>[Stack]<UL><LI>Max Depth = 72<LI>Call Chain = main &rArr; vInitializeLEDs
 </UL>
 <BR>[Calls]<UL><LI><a href="#[3e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;vUpdateDisplay
 <LI><a href="#[3c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;vInitializeUART2
@@ -418,11 +418,13 @@ Local Symbols
 <BR><BR>[Called By]<UL><LI><a href="#[32]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
-<P><STRONG><a name="[3b]"></a>vInitializeLEDs</STRONG> (Thumb, 112 bytes, Stack size 0 bytes, main.o(.text.vInitializeLEDs))
-<BR><BR>[Called By]<UL><LI><a href="#[32]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
+<P><STRONG><a name="[3b]"></a>vInitializeLEDs</STRONG> (Thumb, 176 bytes, Stack size 32 bytes, main.o(.text.vInitializeLEDs))
+<BR><BR>[Stack]<UL><LI>Max Depth = 32<LI>Call Chain = vInitializeLEDs
+</UL>
+<BR>[Called By]<UL><LI><a href="#[32]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
-<P><STRONG><a name="[3c]"></a>vInitializeUART2</STRONG> (Thumb, 124 bytes, Stack size 24 bytes, main.o(.text.vInitializeUART2))
+<P><STRONG><a name="[3c]"></a>vInitializeUART2</STRONG> (Thumb, 104 bytes, Stack size 24 bytes, main.o(.text.vInitializeUART2))
 <BR><BR>[Stack]<UL><LI>Max Depth = 24<LI>Call Chain = vInitializeUART2
 </UL>
 <BR>[Calls]<UL><LI><a href="#[3f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_uidiv
@@ -430,8 +432,10 @@ Local Symbols
 <BR>[Called By]<UL><LI><a href="#[32]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
-<P><STRONG><a name="[3e]"></a>vUpdateDisplay</STRONG> (Thumb, 2 bytes, Stack size 0 bytes, main.o(.text.vUpdateDisplay))
-<BR><BR>[Called By]<UL><LI><a href="#[32]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
+<P><STRONG><a name="[3e]"></a>vUpdateDisplay</STRONG> (Thumb, 428 bytes, Stack size 24 bytes, main.o(.text.vUpdateDisplay))
+<BR><BR>[Stack]<UL><LI>Max Depth = 24<LI>Call Chain = vUpdateDisplay
+</UL>
+<BR>[Called By]<UL><LI><a href="#[32]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 <P>
 <H3>

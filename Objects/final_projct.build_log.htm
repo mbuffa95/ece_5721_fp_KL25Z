@@ -27,16 +27,16 @@ Project File Date:  11/20/2021
 <h2>Output:</h2>
 *** Using Compiler 'V6.16', folder: 'C:\Keil_v5\ARM\ARMCLANG\Bin'
 Build target 'CMSIS-DAP'
-main.c(30): warning: padding size of 'struct xSensorStatusType' with 1 byte to alignment boundary [-Wpadded]
-typedef struct xSensorStatusType
-               ^
-main.c(135): warning: unused function 'UART2_Transmit_Poll' [-Wunused-function]
+main.c(188): warning: unused function 'UART2_Transmit_Poll' [-Wunused-function]
 static void UART2_Transmit_Poll(uint8_t data) 
             ^
+main.c(52): warning: unused variable 'xSensorStatus' [-Wunused-variable]
+static xSENSOR_STATUS_TYPE xSensorStatus[SENSOR_COUNT];
+                           ^
 2 warnings generated.
 compiling main.c...
 linking...
-Program Size: Code=1280 RO-data=304 RW-data=0 ZI-data=360  
+Program Size: Code=1720 RO-data=308 RW-data=0 ZI-data=352  
 ".\Objects\final_projct.axf" - 0 Error(s), 2 Warning(s).
 
 <h2>Software Packages used:</h2>
@@ -65,9 +65,9 @@ Package Vendor: Keil
 
    * Component: Keil::Device:Startup:2.5.0
       Source file:   Device\Source\system_MKL25Z4.c
-      Source file:   Device\Source\ARM\startup_MKL25Z4.s
       Include file:  Device\Source\system_MKL25Z4.h
-Build Time Elapsed:  00:00:02
+      Source file:   Device\Source\ARM\startup_MKL25Z4.s
+Build Time Elapsed:  00:00:00
 </pre>
 </body>
 </html>

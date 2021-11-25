@@ -40,7 +40,7 @@ static void vInitializeUART2(uint32_t baud_rate) ;
 static void vInitializeLEDs( void );
 static uint8_t UART2_Receive_Poll( void );
 static void UART2_Transmit_Poll(uint8_t data);
-static void vUpdateDisplay( uint8_t u8WhichSensor );
+static void vUpdateDisplay( uint8_t u8WhichSensor, uint16_t u16Cap );
 
 typedef struct xSensorStatusType
 {
@@ -51,10 +51,11 @@ typedef struct xSensorStatusType
 
 static xSENSOR_STATUS_TYPE xSensorStatus[SENSOR_COUNT];
 
+// all LEDs on port C
 static const uint8_t u8SensorLEDCfg [SENSOR_COUNT][LED_COUNT_PER_SENSOR] = 
 {
-	{  2,  3,  4,  5, 20 },
-	{ 21, 22, 23, 29, 30 }
+	{  7,  0,  3,  4, 5 },
+	{  6, 10, 11,  9, 8 }
 };
 	
 int main( void )
@@ -73,6 +74,7 @@ int main( void )
 //		UART2_Transmit_Poll('H');
 //		UART2_Transmit_Poll('I');
 //		UART2_Transmit_Poll(0x00);
+				
 		u8Buf[ u8BytesRxd ] = UART2_Receive_Poll();
 		
 		u8BytesRxd++;
@@ -91,8 +93,8 @@ int main( void )
 					
 						if( u16Cap >= LOWEST_VALID_CAPACITANCE && u16Cap <= HIGHEST_VALID_CAPACITANCE )
 						{
-							xSensorStatus[u8Buf[0]].u16Cap = u16Cap;
-							vUpdateDisplay( u8Buf[1] );
+							//xSensorStatus[u8Buf[0]].u16Cap = u16Cap;
+							vUpdateDisplay( u8Buf[0], u16Cap );
 						}
 						
 					break;
@@ -104,8 +106,8 @@ int main( void )
 					if( s8Temp >= LOWEST_VALID_TEMPERATURE && s8Temp <= HIGHEST_VALID_TEMPERATURE )
 					{
 						// valid temperature
-						xSensorStatus[u8Buf[0]].s8Temp = s8Temp;
-						vUpdateDisplay( u8Buf[1] );
+						//xSensorStatus[u8Buf[0]].s8Temp = s8Temp;
+						//vUpdateDisplay( u8Buf[1], s8Temp );
 					}
 						
 					break;
@@ -119,10 +121,9 @@ int main( void )
 	}
 }
 
-static void vUpdateDisplay( uint8_t u8WhichSensor )
+static void vUpdateDisplay( uint8_t u8WhichSensor, uint16_t u16Cap )
 {
 	int i;
-	uint16_t u16Cap;
 	uint32_t u32TurnOffLEDMask = 0;
 	
 	// first turn off all the LEDs for the sensor
@@ -133,11 +134,9 @@ static void vUpdateDisplay( uint8_t u8WhichSensor )
 		u32TurnOffLEDMask |= ( MASK( u8SensorLEDCfg[u8WhichSensor][i] ) );
 	}
 	
-	PTE->PSOR = u32TurnOffLEDMask;
+	PTC->PSOR = u32TurnOffLEDMask;
 	
 	// LEDs for u8WhichSensor should now all be off
-	
-	u16Cap = xSensorStatus[u8WhichSensor].u16Cap;
 	
 	if( u16Cap < 350 )
 	{
@@ -148,29 +147,29 @@ static void vUpdateDisplay( uint8_t u8WhichSensor )
 	{
 		// light LED 0
 		// first clear all of the LEDs
-		PTE->PCOR = MASK( u8SensorLEDCfg[u8WhichSensor][0] );
+		PTC->PCOR = MASK( u8SensorLEDCfg[u8WhichSensor][0] );
 	}
 	else if( ( u16Cap >= 700 ) && ( u16Cap < 1000 ) )
 	{
 		// light LED 0 and 1
-		PTE->PCOR = ( MASK( u8SensorLEDCfg[u8WhichSensor][0] ) | MASK( u8SensorLEDCfg[u8WhichSensor][1] ) );
+		PTC->PCOR = ( MASK( u8SensorLEDCfg[u8WhichSensor][0] ) | MASK( u8SensorLEDCfg[u8WhichSensor][1] ) );
 	}
 	else if( ( u16Cap >= 1000 ) && ( u16Cap < 1250 ) )
 	{
 		// light LED 0, 1 and 2
-		PTE->PCOR = ( MASK( u8SensorLEDCfg[u8WhichSensor][0] ) | MASK( u8SensorLEDCfg[u8WhichSensor][1] ) | 
+		PTC->PCOR = ( MASK( u8SensorLEDCfg[u8WhichSensor][0] ) | MASK( u8SensorLEDCfg[u8WhichSensor][1] ) | 
 		MASK( u8SensorLEDCfg[u8WhichSensor][2] ) );
 	}
 	else if( ( u16Cap >= 1250 ) && ( u16Cap < 1500 ) )
 	{
 		// light LED 0, 1, 2, 3
-		PTE->PCOR = ( MASK( u8SensorLEDCfg[u8WhichSensor][0] ) | MASK( u8SensorLEDCfg[u8WhichSensor][1] ) | 
+		PTC->PCOR = ( MASK( u8SensorLEDCfg[u8WhichSensor][0] ) | MASK( u8SensorLEDCfg[u8WhichSensor][1] ) | 
 		MASK( u8SensorLEDCfg[u8WhichSensor][2] ) | MASK( u8SensorLEDCfg[u8WhichSensor][3] ) );
 	}
 	else if( ( u16Cap >= 1500 ) && ( u16Cap <= 1750 ) )
 	{
 		// light LED 0, 1, 2, 3 and 4
-		PTE->PCOR = ( MASK( u8SensorLEDCfg[u8WhichSensor][0] ) | MASK( u8SensorLEDCfg[u8WhichSensor][1] ) | 
+		PTC->PCOR = ( MASK( u8SensorLEDCfg[u8WhichSensor][0] ) | MASK( u8SensorLEDCfg[u8WhichSensor][1] ) | 
 		MASK( u8SensorLEDCfg[u8WhichSensor][2] ) | MASK( u8SensorLEDCfg[u8WhichSensor][3] ) | MASK( u8SensorLEDCfg[u8WhichSensor][4] ) );
 	}
 	else
@@ -178,28 +177,6 @@ static void vUpdateDisplay( uint8_t u8WhichSensor )
 		// blink LED 0, 1, 2, 3, and 4
 	}
 }
-
-//void vInitializeUART1( uint32_t baud_rate )
-//{
-//	uint32_t divisor;
-//	// enable clock to UART and Port E
-//	SIM->SCGC4 |= SIM_SCGC4_UART1_MASK;
-//	SIM->SCGC5 |= SIM_SCGC5_PORTE_MASK;
-//	
-//	// connect UART to pins for PTE22, PTE23
-//	PORTE->PCR[22] = PORT_PCR_MUX(4);
-//	PORTE->PCR[23] = PORT_PCR_MUX(4);
-//	// ensure tx and rx are disabled before configuration
-//	UART2->C2 &= ~(UARTLP_C2_TE_MASK | UARTLP_C2_RE_MASK);
-//	// Set baud rate to 4800 baud
-//	divisor = BUS_CLOCK/(baud_rate*16);
-//	UART2->BDH = UART_BDH_SBR(divisor>>8);
-//	UART2->BDL = UART_BDL_SBR(divisor);
-//	// No parity, 8 bits, two stop bits, other settings;
-//	UART2->C1 = UART2->S2 = UART2->C3 = 0;
-//	// Enable transmitter and receiver
-//	UART2->C2 = UART_C2_TE_MASK | UART_C2_RE_MASK;
-//}
 
 static uint8_t UART2_Receive_Poll( void ) 
 {
@@ -243,9 +220,6 @@ static  void vInitializeUART2(uint32_t baud_rate)
 	
 	// Enable transmitter and receiver
 	UART2->C2 = ( UART_C2_TE_MASK | UART_C2_RE_MASK );
-	UART1->C4 &= ~UART_C4_TDMAS_MASK;
-	
-	I2C1->F |= (I2C_F_MULT(2) | I2C_F_ICR(15) );
 }
 
 
@@ -254,8 +228,10 @@ static void vInitializeLEDs( void )
 	int i;
 	int j;
 	uint32_t u32DataDirMask = 0;
-	// enable the clock to port A
-	SIM->SCGC5 |= SIM_SCGC5_PORTE_MASK;
+	// enable the clock to port C
+	SIM->SCGC5 |= SIM_SCGC5_PORTC_MASK;
+	
+	uint8_t u8Val;
 	
 	// configure PORT E pins as GPIO
 	
@@ -263,14 +239,23 @@ static void vInitializeLEDs( void )
 	{
 		for( j = 0; j < LED_COUNT_PER_SENSOR; j++ )
 		{
-			PORTE->PCR[u8SensorLEDCfg[i][j]] &= ~PORT_PCR_MUX_MASK;
-			PORTE->PCR[u8SensorLEDCfg[i][j]] |= PORT_PCR_MUX(1);
+			// configure each LED pin to be a GPIO
+			u8Val = u8SensorLEDCfg[i][j];
+			PORTC->PCR[u8SensorLEDCfg[i][j]] &= ~PORT_PCR_MUX_MASK;
+			PORTC->PCR[u8SensorLEDCfg[i][j]] |= PORT_PCR_MUX(1);
+			
+			// each LED will need to be configured as an output
 			u32DataDirMask |= MASK( u8SensorLEDCfg[i][j] );
 		}
 	}
 	
-//	PTE->PDDR |= u32DataDirMask;
-
+	PTC->PDDR |= u32DataDirMask;
+	
+	// start with all LEDs off
+	PTC->PSOR = 0xFFFFFFFF;
+	
+//	PTC->PSOR = 0xFFFFFFFF;
+//	PTC->PCOR = MASK( 0 );
 //	PORTE->PCR[SENSOR_0_PORTE_LED0] &= ~PORT_PCR_MUX_MASK;
 //	PORTE->PCR[SENSOR_0_PORTE_LED0] |= PORT_PCR_MUX(1);
 //	
