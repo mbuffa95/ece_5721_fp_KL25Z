@@ -27,16 +27,16 @@ Project File Date:  11/20/2021
 <h2>Output:</h2>
 *** Using Compiler 'V6.16', folder: 'C:\Keil_v5\ARM\ARMCLANG\Bin'
 Build target 'CMSIS-DAP'
-main.c(188): warning: unused function 'UART2_Transmit_Poll' [-Wunused-function]
+main.c(368): warning: no newline at end of file [-Wnewline-eof]
+}
+ ^
+main.c(255): warning: unused function 'UART2_Transmit_Poll' [-Wunused-function]
 static void UART2_Transmit_Poll(uint8_t data) 
             ^
-main.c(52): warning: unused variable 'xSensorStatus' [-Wunused-variable]
-static xSENSOR_STATUS_TYPE xSensorStatus[SENSOR_COUNT];
-                           ^
 2 warnings generated.
 compiling main.c...
 linking...
-Program Size: Code=1720 RO-data=308 RW-data=0 ZI-data=352  
+Program Size: Code=2224 RO-data=220 RW-data=0 ZI-data=360  
 ".\Objects\final_projct.axf" - 0 Error(s), 2 Warning(s).
 
 <h2>Software Packages used:</h2>
@@ -64,10 +64,10 @@ Package Vendor: Keil
    * Component: ARM::CMSIS:CORE:5.0.1
 
    * Component: Keil::Device:Startup:2.5.0
+      Source file:   Device\Source\ARM\startup_MKL25Z4.s
       Source file:   Device\Source\system_MKL25Z4.c
       Include file:  Device\Source\system_MKL25Z4.h
-      Source file:   Device\Source\ARM\startup_MKL25Z4.s
-Build Time Elapsed:  00:00:00
+Build Time Elapsed:  00:00:01
 </pre>
 </body>
 </html>

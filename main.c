@@ -34,13 +34,25 @@
 #define LOWEST_VALID_TEMPERATURE ( -30 )
 #define HIGHEST_VALID_TEMPERATURE ( 120 )
 
-#define MASK(x) (1UL << (x))
+#define MASK(x) (1UL << (x)) 
 
-static void vInitializeUART2(uint32_t baud_rate) ;
+#define LED_BLINK_PERIOD	500
+
+#define WATER_LEVEL_0 315 
+#define WATER_LEVEL_1	400
+#define WATER_LEVEL_2	520
+#define WATER_LEVEL_3 640
+#define WATER_LEVEL_4 780
+#define WATER_LEVEL_5 1000
+#define WATER_LEVEL_6 1015
+
+static void vInitializeUART2( uint32_t baud_rate ) ;
 static void vInitializeLEDs( void );
 static uint8_t UART2_Receive_Poll( void );
-static void UART2_Transmit_Poll(uint8_t data);
+static void UART2_Transmit_Poll( uint8_t data );
 static void vUpdateDisplay( uint8_t u8WhichSensor, uint16_t u16Cap );
+static void vInitializeLPTMR( void );
+void LPTMR0_IRQHandler( void );
 
 typedef struct xSensorStatusType
 {
@@ -65,11 +77,17 @@ int main( void )
 	//uint8_t u8Data[9] = {0x68, 0x65, 0x79, 0x20, 0x74, 0x68, 0x65, 0x72, 0x65};
 	vInitializeLEDs();
 	vInitializeUART2( 4800 );
+	vInitializeLPTMR();
+	
 	uint16_t u16Cap;
 	int8_t s8Temp;
 	
 	while( 1 )
 	{
+		
+		//vInitializeLPTMR();
+		//PTC->PTOR = ( MASK( u8SensorLEDCfg[0][0] ) | MASK( u8SensorLEDCfg[0][1] ) | 
+		//MASK( u8SensorLEDCfg[0][2] ) | MASK( u8SensorLEDCfg[0][3] ) | MASK( u8SensorLEDCfg[0][4] ) );	
 		
 //		UART2_Transmit_Poll('H');
 //		UART2_Transmit_Poll('I');
@@ -93,7 +111,7 @@ int main( void )
 					
 						if( u16Cap >= LOWEST_VALID_CAPACITANCE && u16Cap <= HIGHEST_VALID_CAPACITANCE )
 						{
-							//xSensorStatus[u8Buf[0]].u16Cap = u16Cap;
+							xSensorStatus[u8Buf[0]].u16Cap = u16Cap;
 							vUpdateDisplay( u8Buf[0], u16Cap );
 						}
 						
@@ -121,6 +139,52 @@ int main( void )
 	}
 }
 
+void LPTMR0_IRQHandler(void){
+//	if(xSensorStatus[0].u16Cap > WATER_LEVEL_6){
+//		PTC->PTOR = ( MASK( u8SensorLEDCfg[0][0] ) | MASK( u8SensorLEDCfg[0][1] ) | 
+//		MASK( u8SensorLEDCfg[0][2] ) | MASK( u8SensorLEDCfg[0][3] ) | MASK( u8SensorLEDCfg[0][4] ) );	
+//	}else 
+	if(xSensorStatus[0].u16Cap < WATER_LEVEL_1 && xSensorStatus[0].u16Cap != 0){
+		PTC->PSOR = ( MASK( u8SensorLEDCfg[0][1] ) | 
+		MASK( u8SensorLEDCfg[0][2] ) | MASK( u8SensorLEDCfg[0][3] ) | MASK( u8SensorLEDCfg[0][4] ) );	
+		PTC->PTOR = MASK( u8SensorLEDCfg[0][0] );		
+	}
+//	if(xSensorStatus[1].u16Cap > WATER_LEVEL_6){
+//		PTC->PTOR = ( MASK( u8SensorLEDCfg[1][0] ) | MASK( u8SensorLEDCfg[1][1] ) | 
+//		MASK( u8SensorLEDCfg[1][2] ) | MASK( u8SensorLEDCfg[1][3] ) | MASK( u8SensorLEDCfg[1][4] ) );	
+//	}else 
+	if(xSensorStatus[1].u16Cap < WATER_LEVEL_1 && xSensorStatus[1].u16Cap != 0){
+		PTC->PSOR = ( MASK( u8SensorLEDCfg[1][1] ) | 
+		MASK( u8SensorLEDCfg[1][2] ) | MASK( u8SensorLEDCfg[1][3] ) | MASK( u8SensorLEDCfg[1][4] ) );
+		PTC->PTOR = MASK( u8SensorLEDCfg[1][0] );
+	}
+	LPTMR0_CSR |= LPTMR_CSR_TCF_MASK;
+}
+
+void vInitializeLPTMR(){
+		SIM_SCGC5 |= SIM_SCGC5_LPTMR_MASK;  // Make sure clock is enabled
+    LPTMR0_CSR = 0;                     // Reset LPTMR settings         
+    LPTMR0_CMR = LED_BLINK_PERIOD;             // Set compare value (in ms)
+
+    // Use 1kHz LPO with no prescaler
+    LPTMR0_PSR = LPTMR_PSR_PCS(1) | LPTMR_PSR_PBYP_MASK;
+
+		    // Start the timer and wait for it to reach the compare value
+//    LPTMR0_CSR = LPTMR_CSR_TEN_MASK;
+//    while (!(LPTMR0_CSR & LPTMR_CSR_TCF_MASK))
+//        ;
+//    
+//    LPTMR0_CSR = 0;
+		LPTMR0_CSR = LPTMR_CSR_TIE_MASK | LPTMR_CSR_TCF_MASK;
+		LPTMR0_CSR |= LPTMR_CSR_TEN_MASK;
+
+		NVIC_SetPriority(LPTMR0_IRQn, 3);
+		NVIC_ClearPendingIRQ(LPTMR0_IRQn);
+		NVIC_EnableIRQ(LPTMR0_IRQn);
+	
+		__enable_irq();
+}
+
 static void vUpdateDisplay( uint8_t u8WhichSensor, uint16_t u16Cap )
 {
 	int i;
@@ -134,41 +198,44 @@ static void vUpdateDisplay( uint8_t u8WhichSensor, uint16_t u16Cap )
 		u32TurnOffLEDMask |= ( MASK( u8SensorLEDCfg[u8WhichSensor][i] ) );
 	}
 	
-	PTC->PSOR = u32TurnOffLEDMask;
-	
 	// LEDs for u8WhichSensor should now all be off
 	
-	if( u16Cap < 350 )
+	if( u16Cap < WATER_LEVEL_0 )
 	{
 		// blink LED0
 		
 	}
-	else if( ( u16Cap >= 350 ) && ( u16Cap < 700 ) )
+	else if( ( u16Cap >= WATER_LEVEL_1 ) && ( u16Cap < WATER_LEVEL_2 ) )
 	{
 		// light LED 0
 		// first clear all of the LEDs
+		PTC->PSOR = u32TurnOffLEDMask;
 		PTC->PCOR = MASK( u8SensorLEDCfg[u8WhichSensor][0] );
 	}
-	else if( ( u16Cap >= 700 ) && ( u16Cap < 1000 ) )
+	else if( ( u16Cap >= WATER_LEVEL_2 ) && ( u16Cap < WATER_LEVEL_3 ) )
 	{
 		// light LED 0 and 1
+		PTC->PSOR = u32TurnOffLEDMask;
 		PTC->PCOR = ( MASK( u8SensorLEDCfg[u8WhichSensor][0] ) | MASK( u8SensorLEDCfg[u8WhichSensor][1] ) );
 	}
-	else if( ( u16Cap >= 1000 ) && ( u16Cap < 1250 ) )
+	else if( ( u16Cap >= WATER_LEVEL_3 ) && ( u16Cap < WATER_LEVEL_4 ) )
 	{
 		// light LED 0, 1 and 2
+		PTC->PSOR = u32TurnOffLEDMask;
 		PTC->PCOR = ( MASK( u8SensorLEDCfg[u8WhichSensor][0] ) | MASK( u8SensorLEDCfg[u8WhichSensor][1] ) | 
 		MASK( u8SensorLEDCfg[u8WhichSensor][2] ) );
 	}
-	else if( ( u16Cap >= 1250 ) && ( u16Cap < 1500 ) )
+	else if( ( u16Cap >= WATER_LEVEL_4 ) && ( u16Cap < WATER_LEVEL_5 ) )
 	{
 		// light LED 0, 1, 2, 3
+		PTC->PSOR = u32TurnOffLEDMask;
 		PTC->PCOR = ( MASK( u8SensorLEDCfg[u8WhichSensor][0] ) | MASK( u8SensorLEDCfg[u8WhichSensor][1] ) | 
 		MASK( u8SensorLEDCfg[u8WhichSensor][2] ) | MASK( u8SensorLEDCfg[u8WhichSensor][3] ) );
 	}
-	else if( ( u16Cap >= 1500 ) && ( u16Cap <= 1750 ) )
+	else if( u16Cap >= WATER_LEVEL_5 )
 	{
 		// light LED 0, 1, 2, 3 and 4
+		PTC->PSOR = u32TurnOffLEDMask;
 		PTC->PCOR = ( MASK( u8SensorLEDCfg[u8WhichSensor][0] ) | MASK( u8SensorLEDCfg[u8WhichSensor][1] ) | 
 		MASK( u8SensorLEDCfg[u8WhichSensor][2] ) | MASK( u8SensorLEDCfg[u8WhichSensor][3] ) | MASK( u8SensorLEDCfg[u8WhichSensor][4] ) );
 	}
