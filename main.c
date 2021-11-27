@@ -2,29 +2,6 @@
 
 #define BUS_CLOCK ( 10526316 )
 
-// PORT A
-#define SENSOR_0_GREEN_PIN ( 17 )
-#define SENSOR_0_YELLOW_PIN ( 16 )
-#define SENSOR_0_RED_PIN ( 13 )
-
-#define SENSOR_1_GREEN_PIN ( 4 )
-#define SENSOR_1_YELLOW_PIN ( 12 )
-#define SENSOR_1_RED_PIN ( 5 )
-
-//Sensor 0 LEDs on port E
-#define SENSOR_0_PORTE_LED0 ( 0 ) // lowest moisture setting
-#define SENSOR_0_PORTE_LED1 ( 1 )
-#define SENSOR_0_PORTE_LED2 ( 2 )
-#define SENSOR_0_PORTE_LED3 ( 3 )
-#define SENSOR_0_PORTE_LED4 ( 4 ) // highest moisture setting
-
-// Sensor 1 LEDs on port E
-#define SENSOR_1_PORTE_LED0 ( 0 ) // lowest moisture setting
-#define SENSOR_1_PORTE_LED1 ( 1 )
-#define SENSOR_1_PORTE_LED2 ( 2 )
-#define SENSOR_1_PORTE_LED3 ( 3 )
-#define SENSOR_1_PORTE_LED4 ( 4 ) // highest moisture setting
-
 #define SENSOR_COUNT ( 2 )
 #define LED_COUNT_PER_SENSOR ( 5 )
 
@@ -49,7 +26,6 @@
 static void vInitializeUART2( uint32_t baud_rate ) ;
 static void vInitializeLEDs( void );
 static uint8_t UART2_Receive_Poll( void );
-static void UART2_Transmit_Poll( uint8_t data );
 static void vUpdateDisplay( uint8_t u8WhichSensor, uint16_t u16Cap );
 static void vInitializeLPTMR( void );
 void LPTMR0_IRQHandler( void );
@@ -74,25 +50,14 @@ int main( void )
 {
 	uint8_t u8Buf[8];
 	uint8_t u8BytesRxd = 0;
-	//uint8_t u8Data[9] = {0x68, 0x65, 0x79, 0x20, 0x74, 0x68, 0x65, 0x72, 0x65};
 	vInitializeLEDs();
 	vInitializeUART2( 4800 );
 	vInitializeLPTMR();
 	
 	uint16_t u16Cap;
-	int8_t s8Temp;
 	
 	while( 1 )
-	{
-		
-		//vInitializeLPTMR();
-		//PTC->PTOR = ( MASK( u8SensorLEDCfg[0][0] ) | MASK( u8SensorLEDCfg[0][1] ) | 
-		//MASK( u8SensorLEDCfg[0][2] ) | MASK( u8SensorLEDCfg[0][3] ) | MASK( u8SensorLEDCfg[0][4] ) );	
-		
-//		UART2_Transmit_Poll('H');
-//		UART2_Transmit_Poll('I');
-//		UART2_Transmit_Poll(0x00);
-				
+	{	
 		u8Buf[ u8BytesRxd ] = UART2_Receive_Poll();
 		
 		u8BytesRxd++;
@@ -103,34 +68,14 @@ int main( void )
 			
 			if( u8Buf[0] < SENSOR_COUNT )
 			{
-				switch( u8Buf[1] )
+				// received capacitance reading
+				u16Cap = (uint16_t)( ( ( (uint16_t)u8Buf[2] ) << 8U ) | (uint16_t)u8Buf[3] );
+			
+				if( u16Cap >= LOWEST_VALID_CAPACITANCE && u16Cap <= HIGHEST_VALID_CAPACITANCE )
 				{
-					case ( 0x00 ):
-						// received capacitance reading
-						u16Cap = (uint16_t)( ( ( (uint16_t)u8Buf[2] ) << 8U ) | (uint16_t)u8Buf[3] );
-					
-						if( u16Cap >= LOWEST_VALID_CAPACITANCE && u16Cap <= HIGHEST_VALID_CAPACITANCE )
-						{
-							xSensorStatus[u8Buf[0]].u16Cap = u16Cap;
-							vUpdateDisplay( u8Buf[0], u16Cap );
-						}
-						
-					break;
-					
-					case ( 0x01 ):
-					// received temperature reading
-					s8Temp = (int8_t)u8Buf[2];
-					
-					if( s8Temp >= LOWEST_VALID_TEMPERATURE && s8Temp <= HIGHEST_VALID_TEMPERATURE )
-					{
-						// valid temperature
-						//xSensorStatus[u8Buf[0]].s8Temp = s8Temp;
-						//vUpdateDisplay( u8Buf[1], s8Temp );
-					}
-						
-					break;
+					xSensorStatus[u8Buf[0]].u16Cap = u16Cap;
+					vUpdateDisplay( u8Buf[0], u16Cap );
 				}
-				
 			}
 			
 			u8BytesRxd = 0;
@@ -140,24 +85,19 @@ int main( void )
 }
 
 void LPTMR0_IRQHandler(void){
-//	if(xSensorStatus[0].u16Cap > WATER_LEVEL_6){
-//		PTC->PTOR = ( MASK( u8SensorLEDCfg[0][0] ) | MASK( u8SensorLEDCfg[0][1] ) | 
-//		MASK( u8SensorLEDCfg[0][2] ) | MASK( u8SensorLEDCfg[0][3] ) | MASK( u8SensorLEDCfg[0][4] ) );	
-//	}else 
 	if(xSensorStatus[0].u16Cap < WATER_LEVEL_1 && xSensorStatus[0].u16Cap != 0){
 		PTC->PSOR = ( MASK( u8SensorLEDCfg[0][1] ) | 
 		MASK( u8SensorLEDCfg[0][2] ) | MASK( u8SensorLEDCfg[0][3] ) | MASK( u8SensorLEDCfg[0][4] ) );	
 		PTC->PTOR = MASK( u8SensorLEDCfg[0][0] );		
 	}
-//	if(xSensorStatus[1].u16Cap > WATER_LEVEL_6){
-//		PTC->PTOR = ( MASK( u8SensorLEDCfg[1][0] ) | MASK( u8SensorLEDCfg[1][1] ) | 
-//		MASK( u8SensorLEDCfg[1][2] ) | MASK( u8SensorLEDCfg[1][3] ) | MASK( u8SensorLEDCfg[1][4] ) );	
-//	}else 
+
 	if(xSensorStatus[1].u16Cap < WATER_LEVEL_1 && xSensorStatus[1].u16Cap != 0){
 		PTC->PSOR = ( MASK( u8SensorLEDCfg[1][1] ) | 
 		MASK( u8SensorLEDCfg[1][2] ) | MASK( u8SensorLEDCfg[1][3] ) | MASK( u8SensorLEDCfg[1][4] ) );
 		PTC->PTOR = MASK( u8SensorLEDCfg[1][0] );
 	}
+	
+	// clear the overflow flag
 	LPTMR0_CSR |= LPTMR_CSR_TCF_MASK;
 }
 
@@ -169,12 +109,6 @@ void vInitializeLPTMR(){
     // Use 1kHz LPO with no prescaler
     LPTMR0_PSR = LPTMR_PSR_PCS(1) | LPTMR_PSR_PBYP_MASK;
 
-		    // Start the timer and wait for it to reach the compare value
-//    LPTMR0_CSR = LPTMR_CSR_TEN_MASK;
-//    while (!(LPTMR0_CSR & LPTMR_CSR_TCF_MASK))
-//        ;
-//    
-//    LPTMR0_CSR = 0;
 		LPTMR0_CSR = LPTMR_CSR_TIE_MASK | LPTMR_CSR_TCF_MASK;
 		LPTMR0_CSR |= LPTMR_CSR_TEN_MASK;
 
@@ -252,13 +186,6 @@ static uint8_t UART2_Receive_Poll( void )
 		return UART2->D;
 }
 
-static void UART2_Transmit_Poll(uint8_t data) 
-{
-	// wait until transmit data register is empty
-	while ( !( UART2->S1 & UART_S1_TDRE_MASK ) );
-	UART2->D = data;
-}
-
 static  void vInitializeUART2(uint32_t baud_rate) 
 {
 	uint32_t divisor;
@@ -278,9 +205,6 @@ static  void vInitializeUART2(uint32_t baud_rate)
 	divisor = ( BUS_CLOCK / ( baud_rate * 16 ) );
 	UART2->BDH = UART_BDH_SBR(divisor>>8); // UART_BDH_SBR( 0 );
 	UART2->BDL = UART_BDL_SBR(divisor); //UART_BDL_SBR( 1 );
-	
-//	u32SBR = UART2->BDL;
-//	u32SBR |= ( ( UART2->BDH & 0x1FU ) << 8U );
 	
 	// No parity, 8 bits, one stop bit, other settings;
 	UART2->C1 = UART2->S2 = UART2->C3 = 0;
@@ -320,49 +244,4 @@ static void vInitializeLEDs( void )
 	
 	// start with all LEDs off
 	PTC->PSOR = 0xFFFFFFFF;
-	
-//	PTC->PSOR = 0xFFFFFFFF;
-//	PTC->PCOR = MASK( 0 );
-//	PORTE->PCR[SENSOR_0_PORTE_LED0] &= ~PORT_PCR_MUX_MASK;
-//	PORTE->PCR[SENSOR_0_PORTE_LED0] |= PORT_PCR_MUX(1);
-//	
-//	PORTE->PCR[SENSOR_0_PORTE_LED1] &= ~PORT_PCR_MUX_MASK;
-//	PORTE->PCR[SENSOR_0_PORTE_LED1] |= PORT_PCR_MUX(1);
-//	
-//	PORTE->PCR[SENSOR_0_PORTE_LED2] &= ~PORT_PCR_MUX_MASK;
-//	PORTE->PCR[SENSOR_0_PORTE_LED2] |= PORT_PCR_MUX(1);
-//	
-//	PORTE->PCR[SENSOR_0_PORTE_LED3] &= ~PORT_PCR_MUX_MASK;
-//	PORTE->PCR[SENSOR_0_PORTE_LED3] |= PORT_PCR_MUX(1);
-//	
-//	PORTE->PCR[SENSOR_0_PORTE_LED4] &= ~PORT_PCR_MUX_MASK;
-//	PORTE->PCR[SENSOR_0_PORTE_LED4] |= PORT_PCR_MUX(1);
-//	
-//	PORTE->PCR[SENSOR_1_PORTE_LED0] &= ~PORT_PCR_MUX_MASK;
-//	PORTE->PCR[SENSOR_1_PORTE_LED0] |= PORT_PCR_MUX(1);
-//	
-//	PORTE->PCR[SENSOR_1_PORTE_LED1] &= ~PORT_PCR_MUX_MASK;
-//	PORTE->PCR[SENSOR_1_PORTE_LED1] |= PORT_PCR_MUX(1);
-//	
-//	PORTE->PCR[SENSOR_1_PORTE_LED2] &= ~PORT_PCR_MUX_MASK;
-//	PORTE->PCR[SENSOR_1_PORTE_LED2] |= PORT_PCR_MUX(1);
-//	
-//	PORTE->PCR[SENSOR_1_PORTE_LED3] &= ~PORT_PCR_MUX_MASK;
-//	PORTE->PCR[SENSOR_1_PORTE_LED3] |= PORT_PCR_MUX(1);
-//	
-//	PORTE->PCR[SENSOR_1_PORTE_LED4] &= ~PORT_PCR_MUX_MASK;
-//	PORTE->PCR[SENSOR_1_PORTE_LED4] |= PORT_PCR_MUX(1);
-//	
-//	// set pins connected to LEDs as outputs
-//	PTE->PDDR |= MASK( SENSOR_0_PORTE_LED0 );
-//	PTE->PDDR |= MASK( SENSOR_0_PORTE_LED1 );
-//	PTE->PDDR |= MASK( SENSOR_0_PORTE_LED2 );
-//	PTE->PDDR |= MASK( SENSOR_0_PORTE_LED3 );
-//	PTE->PDDR |= MASK( SENSOR_0_PORTE_LED4 );
-
-//	PTE->PDDR |= MASK( SENSOR_1_PORTE_LED0 );
-//	PTE->PDDR |= MASK( SENSOR_1_PORTE_LED1 );
-//	PTE->PDDR |= MASK( SENSOR_1_PORTE_LED2 );
-//	PTE->PDDR |= MASK( SENSOR_1_PORTE_LED3 );
-//	PTE->PDDR |= MASK( SENSOR_1_PORTE_LED4 );
 }
